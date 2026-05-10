@@ -1,0 +1,36 @@
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - devopshub_net
+
+  app1:
+    build: ./app1
+    container_name: app1
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+  app2:
+    build: ./app2
+    container_name: app2
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+volumes:
+  redis_data:
+
+networks:
+  devopshub_net:
+    driver: bridge
