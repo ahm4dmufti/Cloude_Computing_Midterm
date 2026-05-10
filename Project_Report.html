@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Midterm Project – Message Queue + Visit Counter with Redis</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      color: #222;
+      background: #f0f2f5;
+      padding: 40px 20px;
+    }
+    .page {
+      max-width: 880px;
+      margin: 0 auto;
+      background: white;
+      padding: 60px 65px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+    }
+
+    /* cover */
+    .cover {
+      text-align: center;
+      padding-bottom: 40px;
+      border-bottom: 2px solid #2c3e50;
+      margin-bottom: 44px;
+    }
+    .cover .course { font-size: 12.5px; color: #888; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 14px; }
+    .cover h1 { font-size: 24px; color: #2c3e50; line-height: 1.4; margin-bottom: 6px; }
+    .cover .instructor { font-size: 13.5px; color: #555; margin-bottom: 28px; }
+    .cover table { display: inline-block; text-align: left; }
+    .cover td { padding: 4px 18px 4px 0; font-size: 13.5px; vertical-align: top; }
+    .cover td:first-child { color: #888; font-weight: 600; min-width: 120px; }
+
+    /* headings */
+    h2 { font-size: 16px; color: #2c3e50; margin: 38px 0 12px; padding-bottom: 5px; border-bottom: 1px solid #ddd; }
+    h3 { font-size: 14px; color: #34495e; margin: 20px 0 7px; }
+    p  { line-height: 1.8; color: #333; margin-bottom: 10px; }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; }
+    li { line-height: 1.85; color: #333; margin-bottom: 2px; }
+
+    /* code */
+    pre {
+      background: #1e272e;
+      color: #d2dae2;
+      padding: 18px 20px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      line-height: 1.7;
+      overflow-x: auto;
+      margin: 10px 0 16px;
+      font-family: Consolas, "Courier New", monospace;
+    }
+    code {
+      background: #eef0f2;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: Consolas, monospace;
+      font-size: 12.5px;
+      color: #c0392b;
+    }
+    pre code { background: none; color: inherit; padding: 0; }
+
+    /* architecture */
+    .arch {
+      background: #f8f9fa;
+      border: 1px solid #dde;
+      border-radius: 6px;
+      padding: 22px 24px;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.9;
+      white-space: pre;
+      overflow-x: auto;
+      margin: 10px 0 16px;
+      color: #2c3e50;
+    }
+
+    /* steps */
+    .step {
+      border-left: 3px solid #3498db;
+      background: #f5faff;
+      padding: 13px 16px;
+      margin: 12px 0;
+      border-radius: 0 5px 5px 0;
+    }
+    .step b { color: #2980b9; display: block; margin-bottom: 7px; }
+
+    /* tables */
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 13px; }
+    th { background: #2c3e50; color: #fff; padding: 9px 13px; text-align: left; }
+    td { padding: 8px 13px; border-bottom: 1px solid #eee; }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    /* screenshots */
+    .ss-wrap { margin: 12px 0 24px; }
+    .ss-wrap img { width: 100%; border: 1px solid #ddd; border-radius: 5px; display: block; }
+    .ss-caption { font-size: 12px; color: #777; margin-top: 5px; text-align: center; font-style: italic; }
+
+    /* url pill */
+    .pill {
+      display: inline-block;
+      background: #27ae60;
+      color: #fff;
+      padding: 4px 13px;
+      border-radius: 20px;
+      font-family: monospace;
+      font-size: 13px;
+      margin: 3px 5px 3px 0;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; padding: 30px 40px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="course">Cloud Computing and DevOps Engineering &nbsp;·&nbsp; Week 8 &nbsp;·&nbsp; Midterm Project</div>
+  <h1>Message Queue + Visit Counter with Redis</h1>
+  <div class="instructor">Instructor: M.Sc. Abdelhakim Rashid</div>
+  <table>
+    <tr>
+      <td>Group Members</td>
+      <td>
+        Ahmad Ibrahim Elmufti &nbsp;–&nbsp; <strong>4866</strong><br>
+        Aya Khaled Abuoud &nbsp;–&nbsp; <strong>4834</strong><br>
+        Seraj Nouri AlFaitoury &nbsp;–&nbsp; <strong>5102</strong>
+      </td>
+    </tr>
+    <tr><td>Date</td><td>May 10, 2026</td></tr>
+    <tr>
+      <td>GitHub</td>
+      <td><a href="https://github.com/ahm4dmufti/Cloude_Computing_Midterm_Project">github.com/ahm4dmufti/Cloude_Computing_Midterm_Project</a></td>
+    </tr>
+  </table>
+</div>
+
+
+<!-- 1 -->
+<h2>1. Project Title and Description</h2>
+<p><strong>Title:</strong> DevOpsHub – Message Queue + Visit Counter with Redis</p>
+<p>
+  For this project we built a simple feedback system for a fictional startup called DevOpsHub.
+  The idea is that users visit a page, submit a message, and everything gets stored in Redis.
+  A separate dashboard page reads from the same Redis instance and shows how many messages
+  were submitted and how many times the collector page was visited.
+</p>
+<p>
+  The whole thing runs as three Docker containers managed by Docker Compose — App 1 (the
+  collector), App 2 (the dashboard), and Redis. All three are on the same Docker network so
+  they can talk to each other by name without using IP addresses.
+</p>
+
+
+<!-- 2 -->
+<h2>2. Architecture</h2>
+<p>
+  Below is a diagram showing how the three containers are connected. App 1 writes to Redis,
+  App 2 reads from Redis, and neither app talks directly to the other.
+</p>
+<div class="arch">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                   Docker Network: devopshub_net                  │
+  │                                                                  │
+  │   ┌─────────────────┐        ┌──────────────────────────────┐   │
+  │   │  App 1          │        │  Redis  (redis:alpine)       │   │
+  │   │  Message        │──────► │                              │   │
+  │   │  Collector      │        │  visit_count  → STRING       │   │
+  │   │  Flask :5000    │◄────── │  messages     → LIST         │   │
+  │   │                 │        │                              │   │
+  │   │  INCR           │        │  AOF persistence on          │   │
+  │   │  RPUSH          │        │  volume: redis_data          │   │
+  │   └─────────────────┘        └──────────────────────────────┘   │
+  │                                          ▲                      │
+  │   ┌─────────────────┐                    │                      │
+  │   │  App 2          │────────────────────┘                      │
+  │   │  Dashboard      │  GET visit_count                          │
+  │   │  Flask :5001    │  LLEN messages                            │
+  │   └─────────────────┘                                           │
+  │                                                                  │
+  │   Host: localhost:5000 → app1     localhost:5001 → app2         │
+  └──────────────────────────────────────────────────────────────────┘
+</div>
+
+<table>
+  <tr><th>Service</th><th>Image</th><th>Port</th><th>Role</th></tr>
+  <tr><td>redis</td><td>redis:alpine</td><td>6379 (internal only)</td><td>Shared database</td></tr>
+  <tr><td>app1</td><td>project-app1</td><td>5000 → 5000</td><td>Collects messages, counts visits</td></tr>
+  <tr><td>app2</td><td>project-app2</td><td>5001 → 5001</td><td>Shows counts from Redis</td></tr>
+</table>
+
+
+<!-- 3 -->
+<h2>3. How the Two Apps Interact with Redis</h2>
+<p>
+  Both apps connect to Redis using <code>host='redis'</code> in the Python code. Docker's
+  internal DNS resolves the name <code>redis</code> to the correct container automatically
+  because all three services are on the same network.
+</p>
+
+<h3>What App 1 does</h3>
+<p>
+  Every time someone opens the page, App 1 runs <code>INCR visit_count</code> which adds 1
+  to the counter and returns the new value. When the user submits a message, App 1 runs
+  <code>RPUSH messages &lt;text&gt;</code> to add it to the end of a Redis list, then
+  redirects back to the main page.
+</p>
+
+<h3>What App 2 does</h3>
+<p>
+  App 2 only reads. Every page load runs <code>LLEN messages</code> to get the total number
+  of items in the list, and <code>GET visit_count</code> to get the current visit number.
+  It then displays both values on the page. App 2 never writes anything to Redis.
+</p>
+
+<table>
+  <tr><th>Redis Key</th><th>Type</th><th>Who writes</th><th>Who reads</th><th>Command</th></tr>
+  <tr><td><code>visit_count</code></td><td>String</td><td>App 1</td><td>App 2</td><td>INCR / GET</td></tr>
+  <tr><td><code>messages</code></td><td>List</td><td>App 1</td><td>App 2</td><td>RPUSH / LLEN</td></tr>
+</table>
+
+
+<!-- 4 -->
+<h2>4. Prerequisites</h2>
+<p>To run this project you only need:</p>
+<ul>
+  <li><strong>Docker Desktop</strong> installed and running (it includes Docker Compose v2)</li>
+  <li>Internet connection the first time, to pull the base images from Docker Hub</li>
+  <li>Ports <strong>5000</strong> and <strong>5001</strong> free on your machine</li>
+</ul>
+<p>No Python or Redis installation is needed on the host — everything runs inside the containers.</p>
+
+
+<!-- 5 -->
+<h2>5. Step-by-Step Solution</h2>
+
+<div class="step">
+  <b>Step 1 – Create the folder structure</b>
+  <p>Open a terminal and create the project folders:</p>
+  <pre><code>mkdir project
+cd project
+mkdir app1
+mkdir app2</code></pre>
+  <p>The structure we are going to build:</p>
+  <pre><code>project/
+├── app1/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── app2/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── Dockerfile
+└── docker-compose.yml</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 2 – Write App 1 (Message Collector)</b>
+  <p>Create <code>app1/requirements.txt</code>:</p>
+  <pre><code>flask
+redis</code></pre>
+  <p>Create <code>app1/app.py</code>:</p>
+  <pre><code>from flask import Flask, request, redirect, url_for
+import redis
+
+app = Flask(__name__)
+r = redis.Redis(host='redis', port=6379, decode_responses=True)
+
+HTML = """
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;Message Collector&lt;/title&gt;
+  &lt;style&gt;
+    body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 60px auto; background: #f4f6f9; }}
+    .card {{ background: white; padding: 32px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+    h1 {{ color: #2c3e50; margin-bottom: 4px; }}
+    .badge {{ display: inline-block; background: #3498db; color: white; padding: 4px 12px;
+              border-radius: 20px; font-size: 14px; margin-bottom: 24px; }}
+    textarea {{ width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;
+                font-size: 15px; box-sizing: border-box; }}
+    button {{ margin-top: 12px; padding: 10px 28px; background: #2ecc71; color: white;
+              border: none; border-radius: 6px; font-size: 15px; cursor: pointer; }}
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="card"&gt;
+    &lt;h1&gt;DevOpsHub Feedback&lt;/h1&gt;
+    &lt;span class="badge"&gt;Page visits: {visits}&lt;/span&gt;
+    &lt;form method="POST" action="/submit"&gt;
+      &lt;textarea name="message" rows="4"
+        placeholder="Enter your message, feedback or suggestion..." required&gt;&lt;/textarea&gt;
+      &lt;br&gt;
+      &lt;button type="submit"&gt;Submit Message&lt;/button&gt;
+    &lt;/form&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"""
+
+@app.route('/', methods=['GET'])
+def index():
+    visits = r.incr('visit_count')
+    return HTML.format(visits=visits)
+
+@app.route('/submit', methods=['POST'])
+def submit():
+    message = request.form.get('message', '').strip()
+    if message:
+        r.rpush('messages', message)
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 3 – Write App 2 (Dashboard)</b>
+  <p>Create <code>app2/requirements.txt</code>:</p>
+  <pre><code>flask
+redis</code></pre>
+  <p>Create <code>app2/app.py</code>:</p>
+  <pre><code>from flask import Flask
+import redis
+
+app = Flask(__name__)
+r = redis.Redis(host='redis', port=6379, decode_responses=True)
+
+HTML = """
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;DevOpsHub Dashboard&lt;/title&gt;
+  &lt;style&gt;
+    body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 60px auto; background: #f4f6f9; }}
+    .card {{ background: white; padding: 32px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+    h1 {{ color: #2c3e50; margin-bottom: 24px; }}
+    .stat {{ display: flex; justify-content: space-between; align-items: center;
+             padding: 16px 0; border-bottom: 1px solid #eee; }}
+    .stat:last-child {{ border-bottom: none; }}
+    .label {{ font-size: 16px; color: #555; }}
+    .value {{ font-size: 28px; font-weight: bold; color: #3498db; }}
+    .footer {{ margin-top: 16px; font-size: 12px; color: #aaa; text-align: right; }}
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="card"&gt;
+    &lt;h1&gt;Dashboard&lt;/h1&gt;
+    &lt;div class="stat"&gt;
+      &lt;span class="label"&gt;Total Messages Collected&lt;/span&gt;
+      &lt;span class="value"&gt;{messages}&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="stat"&gt;
+      &lt;span class="label"&gt;Total Page Visits (App 1)&lt;/span&gt;
+      &lt;span class="value"&gt;{visits}&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;p class="footer"&gt;Data refreshes on every page load&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"""
+
+@app.route('/')
+def dashboard():
+    messages = r.llen('messages')
+    visits = r.get('visit_count') or 0
+    return HTML.format(messages=messages, visits=visits)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001)</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 4 – Write the Dockerfile for App 1</b>
+  <p>Create <code>app1/Dockerfile</code>:</p>
+  <pre><code>FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 5 – Write the Dockerfile for App 2</b>
+  <p>Create <code>app2/Dockerfile</code>. It is the same as App 1 except the port:</p>
+  <pre><code>FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5001
+
+CMD ["python", "app.py"]</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 6 – Write docker-compose.yml</b>
+  <p>Create <code>docker-compose.yml</code> in the root of the project:</p>
+  <pre><code>services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - devopshub_net
+
+  app1:
+    build: ./app1
+    container_name: app1
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+  app2:
+    build: ./app2
+    container_name: app2
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+volumes:
+  redis_data:
+
+networks:
+  devopshub_net:
+    driver: bridge</code></pre>
+  <p>
+    The <code>depends_on</code> makes sure Redis starts before the apps.
+    The <code>devopshub_net</code> network lets all three containers resolve each other by name.
+    The <code>redis_data</code> volume keeps the data even if the containers are stopped.
+  </p>
+</div>
+
+<div class="step">
+  <b>Step 7 – Build and run everything</b>
+  <p>From the <code>project/</code> folder run:</p>
+  <pre><code>docker compose up --build -d</code></pre>
+  <p>
+    This builds the two app images, pulls Redis, creates the network and volume,
+    and starts all three containers in the background. The first run takes a few minutes
+    because it downloads the base images.
+  </p>
+</div>
+
+<div class="step">
+  <b>Step 8 – Check that all containers are up</b>
+  <pre><code>docker compose ps</code></pre>
+  <p>You should see all three containers with status <strong>Up</strong>:</p>
+  <pre><code>NAME    IMAGE          COMMAND          SERVICE  CREATED         STATUS         PORTS
+app1    project-app1   "python app.py"  app1     20 seconds ago  Up 19 seconds  0.0.0.0:5000->5000/tcp
+app2    project-app2   "python app.py"  app2     20 seconds ago  Up 19 seconds  0.0.0.0:5001->5001/tcp
+redis   redis:alpine   "docker-entry…"  redis    21 seconds ago  Up 19 seconds  6379/tcp</code></pre>
+</div>
+
+<div class="step">
+  <b>Step 9 – Test the application</b>
+  <ol>
+    <li>Open <strong>http://localhost:5000</strong> — the visit counter goes up by 1 on each load.</li>
+    <li>Type something in the form and click Submit Message.</li>
+    <li>Open <strong>http://localhost:5001</strong> — you will see the message count and visit count updated.</li>
+  </ol>
+</div>
+
+
+<!-- 6 -->
+<h2>6. docker-compose.yml</h2>
+<pre><code>services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - devopshub_net
+
+  app1:
+    build: ./app1
+    container_name: app1
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+  app2:
+    build: ./app2
+    container_name: app2
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis
+    networks:
+      - devopshub_net
+
+volumes:
+  redis_data:
+
+networks:
+  devopshub_net:
+    driver: bridge</code></pre>
+
+
+<!-- 7 -->
+<h2>7. Dockerfile – Web App 1</h2>
+<pre><code>FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]</code></pre>
+
+<p>
+  We use <code>python:3.11-slim</code> as the base image because it is small and has Python
+  already installed. We copy <code>requirements.txt</code> first before the app code so that
+  Docker can cache the pip install step — if we only change <code>app.py</code> later, it
+  won't re-run pip. The app runs on port 5000.
+</p>
+
+
+<!-- 8 -->
+<h2>8. Dockerfile – Web App 2</h2>
+<pre><code>FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py .
+
+EXPOSE 5001
+
+CMD ["python", "app.py"]</code></pre>
+
+<p>Same structure as App 1. The only difference is the port — App 2 listens on <strong>5001</strong>.</p>
+
+
+<!-- 9 -->
+<h2>9. Docker Images</h2>
+<p>After building, running <code>docker images</code> shows these images were created:</p>
+<table>
+  <tr><th>Repository</th><th>Tag</th><th>Image ID</th><th>Size</th></tr>
+  <tr><td>project-app1</td><td>latest</td><td>2943b5895b1e</td><td>216 MB</td></tr>
+  <tr><td>project-app2</td><td>latest</td><td>19cf64f0f072</td><td>216 MB</td></tr>
+  <tr><td>redis</td><td>alpine</td><td>d146f83b1e0f</td><td>134 MB</td></tr>
+</table>
+<p>
+  The two app images are both 216 MB because they are built on top of <code>python:3.11-slim</code>
+  with Flask and the Redis client installed. The Redis image is much smaller because it uses
+  the Alpine Linux base.
+</p>
+
+
+<!-- 10 -->
+<h2>10. Access Instructions</h2>
+<p>Once the containers are running, open a browser and go to:</p>
+<table>
+  <tr><th>App</th><th>URL</th><th>What you will see</th></tr>
+  <tr>
+    <td>App 1 – Message Collector</td>
+    <td><span class="pill">http://localhost:5000</span></td>
+    <td>A form to submit messages with a visit counter at the top</td>
+  </tr>
+  <tr>
+    <td>App 2 – Dashboard</td>
+    <td><span class="pill">http://localhost:5001</span></td>
+    <td>Total messages collected and total page visits</td>
+  </tr>
+</table>
+<p>To stop the containers:</p>
+<pre><code>docker compose down</code></pre>
+
+
+<!-- 11 -->
+<h2>11. Screenshots</h2>
+
+<h3>Screenshot 1 – docker compose ps showing all three services Up</h3>
+<div class="ss-wrap">
+  <img src="screenshots/Screenshot 2026-05-10 122635.png" alt="docker compose ps output showing app1, app2, and redis all Up" />
+  <div class="ss-caption">All three containers running: app1 (port 5000), app2 (port 5001), redis (port 6379)</div>
+</div>
+
+<h3>Screenshot 2 – Browser showing App 1 (Message Collector) at localhost:5000</h3>
+<div class="ss-wrap">
+  <img src="screenshots/Screenshot 2026-05-10 122721.png" alt="App 1 message collector page in browser" />
+  <div class="ss-caption">App 1 running at http://localhost:5000 — feedback form with visit counter badge</div>
+</div>
+
+<h3>Screenshot 3 – Browser showing App 2 (Dashboard) at localhost:5001</h3>
+<div class="ss-wrap">
+  <img src="screenshots/Screenshot 2026-05-10 122731.png" alt="App 2 dashboard page in browser" />
+  <div class="ss-caption">App 2 running at http://localhost:5001 — total messages and visit count pulled from Redis</div>
+</div>
+
+</div>
+</body>
+</html>
