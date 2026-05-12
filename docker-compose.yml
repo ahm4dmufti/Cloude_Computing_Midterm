@@ -7,6 +7,11 @@ services:
     command: redis-server --appendonly yes
     networks:
       - devopshub_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   app1:
     build: ./app1
@@ -14,7 +19,9 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 
@@ -24,7 +31,9 @@ services:
     ports:
       - "5001:5001"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 

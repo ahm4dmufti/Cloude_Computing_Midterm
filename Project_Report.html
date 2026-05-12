@@ -148,15 +148,14 @@
 <h2>1. Project Title and Description</h2>
 <p><strong>Title:</strong> DevOpsHub – Message Queue + Visit Counter with Redis</p>
 <p>
-  For this project we built a simple feedback system for a fictional startup called DevOpsHub.
-  The idea is that users visit a page, submit a message, and everything gets stored in Redis.
-  A separate dashboard page reads from the same Redis instance and shows how many messages
-  were submitted and how many times the collector page was visited.
+  We built a feedback system made up of two Flask apps and a Redis container, all wired together with Docker Compose.
+  App 1 is a form where users can type and submit a message. App 2 is a dashboard that shows how many messages
+  were submitted and how many times the form page was visited.
 </p>
 <p>
-  The whole thing runs as three Docker containers managed by Docker Compose — App 1 (the
-  collector), App 2 (the dashboard), and Redis. All three are on the same Docker network so
-  they can talk to each other by name without using IP addresses.
+  The two apps don't talk to each other directly — they both connect to the same Redis instance.
+  App 1 writes to it, App 2 reads from it. All three containers are on the same Docker network,
+  so they reach each other by name instead of IP.
 </p>
 
 
@@ -201,24 +200,21 @@
 <!-- 3 -->
 <h2>3. How the Two Apps Interact with Redis</h2>
 <p>
-  Both apps connect to Redis using <code>host='redis'</code> in the Python code. Docker's
-  internal DNS resolves the name <code>redis</code> to the correct container automatically
-  because all three services are on the same network.
+  Both apps connect to Redis with <code>host='redis'</code>. Because all three containers are on
+  the same Docker network, Docker resolves the name <code>redis</code> to the right container — no IP needed.
 </p>
 
 <h3>What App 1 does</h3>
 <p>
-  Every time someone opens the page, App 1 runs <code>INCR visit_count</code> which adds 1
-  to the counter and returns the new value. When the user submits a message, App 1 runs
-  <code>RPUSH messages &lt;text&gt;</code> to add it to the end of a Redis list, then
-  redirects back to the main page.
+  On every page load it runs <code>INCR visit_count</code>, which bumps the counter by 1 and returns
+  the new value to display. When someone submits the form, it runs <code>RPUSH messages &lt;text&gt;</code>
+  to append the message to a Redis list, then redirects back.
 </p>
 
 <h3>What App 2 does</h3>
 <p>
-  App 2 only reads. Every page load runs <code>LLEN messages</code> to get the total number
-  of items in the list, and <code>GET visit_count</code> to get the current visit number.
-  It then displays both values on the page. App 2 never writes anything to Redis.
+  App 2 only ever reads. On each load it calls <code>LLEN messages</code> to get the list length
+  and <code>GET visit_count</code> to get the counter, then shows both on the page. It never writes to Redis.
 </p>
 
 <table>
@@ -265,8 +261,8 @@ mkdir app2</code></pre>
 <div class="step">
   <b>Step 2 – Write App 1 (Message Collector)</b>
   <p>Create <code>app1/requirements.txt</code>:</p>
-  <pre><code>flask
-redis</code></pre>
+  <pre><code>flask==3.1.0
+redis==5.2.1</code></pre>
   <p>Create <code>app1/app.py</code>:</p>
   <pre><code>from flask import Flask, request, redirect, url_for
 import redis
@@ -424,6 +420,11 @@ CMD ["python", "app.py"]</code></pre>
     command: redis-server --appendonly yes
     networks:
       - devopshub_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   app1:
     build: ./app1
@@ -431,7 +432,9 @@ CMD ["python", "app.py"]</code></pre>
     ports:
       - "5000:5000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 
@@ -441,7 +444,9 @@ CMD ["python", "app.py"]</code></pre>
     ports:
       - "5001:5001"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 
@@ -452,9 +457,10 @@ networks:
   devopshub_net:
     driver: bridge</code></pre>
   <p>
-    The <code>depends_on</code> makes sure Redis starts before the apps.
-    The <code>devopshub_net</code> network lets all three containers resolve each other by name.
-    The <code>redis_data</code> volume keeps the data even if the containers are stopped.
+    The healthcheck pings Redis every 5 seconds, and <code>depends_on</code> with
+    <code>condition: service_healthy</code> makes the apps wait until Redis is actually ready — not
+    just started. <code>restart: unless-stopped</code> means if an app crashes it comes back on its own.
+    The named volume keeps the data if the containers are stopped.
   </p>
 </div>
 
@@ -500,6 +506,11 @@ redis   redis:alpine   "docker-entry…"  redis    21 seconds ago  Up 19 seconds
     command: redis-server --appendonly yes
     networks:
       - devopshub_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   app1:
     build: ./app1
@@ -507,7 +518,9 @@ redis   redis:alpine   "docker-entry…"  redis    21 seconds ago  Up 19 seconds
     ports:
       - "5000:5000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 
@@ -517,7 +530,9 @@ redis   redis:alpine   "docker-entry…"  redis    21 seconds ago  Up 19 seconds
     ports:
       - "5001:5001"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - devopshub_net
 
@@ -545,10 +560,8 @@ EXPOSE 5000
 CMD ["python", "app.py"]</code></pre>
 
 <p>
-  We use <code>python:3.11-slim</code> as the base image because it is small and has Python
-  already installed. We copy <code>requirements.txt</code> first before the app code so that
-  Docker can cache the pip install step — if we only change <code>app.py</code> later, it
-  won't re-run pip. The app runs on port 5000.
+  <code>python:3.11-slim</code> keeps the image small. We copy <code>requirements.txt</code> before
+  the app code so Docker caches the pip install — changing <code>app.py</code> later won't trigger a full reinstall.
 </p>
 
 
@@ -567,7 +580,7 @@ EXPOSE 5001
 
 CMD ["python", "app.py"]</code></pre>
 
-<p>Same structure as App 1. The only difference is the port — App 2 listens on <strong>5001</strong>.</p>
+<p>Same as App 1's Dockerfile, just port 5001 instead of 5000.</p>
 
 
 <!-- 9 -->
@@ -580,9 +593,8 @@ CMD ["python", "app.py"]</code></pre>
   <tr><td>redis</td><td>alpine</td><td>d146f83b1e0f</td><td>134 MB</td></tr>
 </table>
 <p>
-  The two app images are both 216 MB because they are built on top of <code>python:3.11-slim</code>
-  with Flask and the Redis client installed. The Redis image is much smaller because it uses
-  the Alpine Linux base.
+  The app images are ~216 MB each — that's <code>python:3.11-slim</code> plus Flask and the Redis client.
+  Redis on Alpine is much lighter at 134 MB.
 </p>
 
 
